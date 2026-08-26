@@ -1,25 +1,29 @@
-// Minimal implementation to satisfy the first red test: lowercase the text,
-// split on non-word boundaries, and keep distinctive tokens (dropping
-// stopwords, preserving first-occurrence order, de-duplicated).
-const STOPWORDS = new Set([
-  'the', 'and', 'to', 'a', 'an', 'of', 'for', 'in', 'on', 'with',
-  'is', 'are', 'was', 'this', 'that', 'it', 'at', 'by', 'as', 'from',
-  '的', '了', '和', '用', '在', '要', '一个', '这个', '那个', '不', '很'
-])
+// Extract canonical topic labels from a conversation by scanning the domain
+// lexicon. Latin triggers match on word boundaries (so 'ts' doesn't hit inside
+// 'results'), Chinese triggers match as substrings (Chinese has no spaces).
+// Deterministic: labels come back in lexicon definition order, deduplicated.
+import { LEXICON, isLatinTrigger } from './lexicon.js'
+
+function escapeRegExp(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
 
 export function extractTopics(text) {
-  const tokens = String(text)
-    .toLowerCase()
-    .split(/[^a-z0-9\u4e00-\u9fff]+/)
-    .filter(Boolean)
+  const lower = String(text).toLowerCase()
+  const found = new Set()
 
-  const seen = new Set()
-  const out = []
-  for (const token of tokens) {
-    if (STOPWORDS.has(token)) continue
-    if (seen.has(token)) continue
-    seen.add(token)
-    out.push(token)
+  for (const [tag, { triggers }] of Object.entries(LEXICON)) {
+    if (found.has(tag)) continue
+    for (const trigger of triggers) {
+      const hit = isLatinTrigger(trigger)
+        ? new RegExp(`(^|[^a-z0-9])${escapeRegExp(trigger)}([^a-z0-9]|$)`).test(lower)
+        : lower.includes(trigger)
+      if (hit) {
+        found.add(tag)
+        break
+      }
+    }
   }
-  return out
+
+  return Object.keys(LEXICON).filter((tag) => found.has(tag))
 }
