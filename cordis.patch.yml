@@ -1,0 +1,6 @@
+# dsh-bookmate bundle patch: mount the bookmate skill provider into the host
+# skill registry (host-plane rows, merged into every agent preset's scope
+# chain), so the `book-recommend` skill is available to all sessions.
+- insert:
+    - id: dsh-bookmate
+      name: 'dsh-bookmate'
