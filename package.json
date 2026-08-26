@@ -1,0 +1,10 @@
+{
+  "name": "dsh-bookmate",
+  "version": "0.1.0",
+  "description": "Wrap-up book recommender for DeepSeek Harness (teaching demo)",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test"
+  }
+}
