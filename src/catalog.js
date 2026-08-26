@@ -28,7 +28,7 @@ export const BOOKS = [
   { id: 'on-writing-well', title: 'On Writing Well', author: 'William Zinsser', tags: ['writing'], blurb: '非虚构写作的经典，教你写得清楚、简洁、有温度，写文档和教程都用得上。' },
   { id: 'design-of-everyday-things', title: 'The Design of Everyday Things', author: 'Don Norman', tags: ['design', 'psychology'], blurb: '讲设计如何传达“可操作”的暗示，UI 与产品设计都应读。' },
   { id: 'make-it-stick', title: 'Make It Stick', author: 'Peter Brown et al.', tags: ['learning'], blurb: '基于认知科学的有效学习法，反对重复阅读，强调检索练习与间隔。' },
-  { id: 'so-good-cant-ignore', title: 'So Good They Can\\'t Ignore You', author: 'Cal Newport', tags: ['career'], blurb: '反对“追随热情”，主张用“匠人精神”打磨稀缺技能来经营职业生涯。' },
+  { id: 'so-good-cant-ignore', title: "So Good They Can't Ignore You", author: 'Cal Newport', tags: ['career'], blurb: '反对“追随热情”，主张用“匠人精神”打磨稀缺技能来经营职业生涯。' },
   { id: 'thinking-fast-slow', title: 'Thinking, Fast and Slow', author: 'Daniel Kahneman', tags: ['psychology'], blurb: '系统1/系统2 双系统思维，帮你识别判断偏差与直觉陷阱。' }
 ]
 
