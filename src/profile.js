@@ -24,18 +24,52 @@ export function mergeTags(existing, incoming) {
   return [...new Set([...existing, ...incoming])]
 }
 
+// Canonical dedup key for a recommended book: case-insensitive title+author
+// with ALL whitespace removed, so CJK/latin spacing variants (「深入浅出
+// TypeScript」 vs 「深入浅出TypeScript」) and casing differences are one book.
+export function normalizeBookKey(title, author) {
+  const norm = (s) => String(s).trim().replace(/\s+/g, '').toLowerCase()
+  return `${norm(title)}::${norm(author)}`
+}
+
+// Parse the "## 已推荐" section: bullets of the form `- Title — Author — Date`.
+// Sections absent (older profiles) simply yield no entries.
+export function parseRecommended(text) {
+  const section = text.split(/^##\s*已推荐\s*$/m)[1] ?? ''
+  const entries = []
+  for (const line of section.split('\n')) {
+    const m = line.match(/^\s*-\s*(.+?)\s*$/)
+    if (!m) continue
+    if (/^##/.test(m[1])) break
+    const [title, author, date] = m[1].split(/\s+—\s+/)
+    if (!title || !author) continue
+    entries.push(date ? { title, author, date } : { title, author })
+  }
+  return entries
+}
+
 export async function loadProfile(filePath = DEFAULT_PROFILE_PATH) {
   try {
     const text = await readFile(filePath, 'utf8')
-    return { exists: true, tags: parseTags(text), text }
+    return { exists: true, tags: parseTags(text), recommended: parseRecommended(text), text }
   } catch {
-    return { exists: false, tags: [], text: '' }
+    return { exists: false, tags: [], recommended: [], text: '' }
   }
 }
 
-export async function saveProfile({ tags }, filePath = DEFAULT_PROFILE_PATH) {
+export async function saveProfile({ tags, recommended = [] }, filePath = DEFAULT_PROFILE_PATH) {
+  const seen = new Set()
   const lines = ['# 用户画像（dsh-bookmate）', '', '## 兴趣标签']
   for (const tag of tags) lines.push(`- ${tag}`)
+  if (recommended.length > 0) {
+    lines.push('', '## 已推荐')
+    for (const { title, author, date } of recommended) {
+      const key = normalizeBookKey(title, author)
+      if (seen.has(key)) continue
+      seen.add(key)
+      lines.push(`- ${title} — ${author}${date ? ` — ${date}` : ''}`)
+    }
+  }
   lines.push('')
   await mkdir(dirname(filePath), { recursive: true })
   await writeFile(filePath, lines.join('\n'), 'utf8')

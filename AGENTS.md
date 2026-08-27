@@ -8,16 +8,21 @@
 
 ## 怎么跑
 
-- 测试：`npm test`（内置 `node:test`，无需其它依赖）
+- 测试：`npm test`（内置 `node:test`，无其它依赖；本机 npm spawn 失败时直接 `node --test`）
+- 插件注册两个模型工具（`lib/index.js`）：
+  - `book_search` —— OpenLibrary HTTP adapter（`src/book-search.js`），超时/HTTP/网络错误统一抛带信息的 Error，模型据此降级
+  - `book_rank` —— 排序入口：模型打好标签的候选 → `recommend()` 引擎，画像标签做稳定信号、已推荐做去重（`src/book-rank.js`）
 - 引擎是 `src/` 下的**纯函数**：
-  - `extractTopics(conversationText) → Topic[]` —— 从对话文本抽主题词
-  - `scoreBook(book, profile, topics, weights?) → number` —— 画像分 + 主题分加权的书名得分
+  - `scoreBook(book, profile, topics, weights?) → number` —— 画像分 + 主题分加权的书得分
+  - `recommend({ profile, topics, catalog, weights?, topK? }) → [{ book, score, reason }]`
+  - `normalizeOpenLibraryDocs` / `isRecommendable` —— OpenLibrary 响应规范化与可推荐校验（`src/openlibrary.js`）
 
 ## 领域词汇（详见 CONTEXT.md）
 
-- **Topic** = 从对话抽出的主题词标签。本仓库暂用裸 `string[]`（见 ADR 之外的简化），预计会成类型。
+- **Topic** = 模型从对话抽取的主题词标签，kebab-case，**无固定词表**——词汇表就是画像本身（ADR-0003）。
+- **Book Source** = 候选书来源：OpenLibrary adapter 先行，模型知识兜底（注明"未经线上核验"）。
 - **Resolved / Wrap-up** = 收尾判定与触发行为。
-- **User Profile** = 用户画像，存 `~/.dsh/book-profile.md`，**≠** DSH 运行时投影的 `USER.md`。
+- **User Profile** = 用户画像（兴趣标签 + 已推荐），存 `~/.dsh/book-profile.md`，**≠** DSH 运行时投影的 `USER.md`。
 
 ## 约定
 
@@ -27,4 +32,6 @@
 
 ## 已知坑
 
-- **`extractTopics` 目前对中文不可靠**：`src/topic.js` 按非汉字边界切分，中文无空格会把整段连续汉字切成一个 token，停用词削不掉、词频失效。真实会话是中文，所以这是实质缺口（来自 code-review 的 Spec 轴结论），加中文分词再回来。
+- **线上书源依赖网络**：本机直连 OpenLibrary 需代理（127.0.0.1:7890，常不开），代理没开时 `book_search` 必然失败——失败后模型知识兜底是设计内行为（ADR-0003），别当 bug 修。
+- **中文把守在工具层**：`isRecommendable`（zh/chi）+ 结构化校验锁在 `book_search`/`book_rank` 工具内，引擎不做语言或质量过滤。
+- **画像三段结构有约定**：`## 兴趣标签` / `## 已推荐` 是解析锚点（`src/profile.js`），`## 已推荐` 行格式为 `- 书名 — 作者 — 日期`（长破折号），改格式需同步解析器与测试。
