@@ -37,6 +37,21 @@ test('normalizeOpenLibraryDocs turns raw search docs into candidate books', () =
   ])
 })
 
+test('normalizeOpenLibraryDocs prefers the Chinese code when chi is not first', () => {
+  // Live shape: search.json's language:chi filter matches works that HAVE a
+  // Chinese edition, but chi typically appears mid-array, not first.
+  const books = normalizeOpenLibraryDocs([
+    {
+      key: '/works/OL1131092W',
+      title: 'Intruder in the Dust',
+      author_name: ['William Faulkner'],
+      language: ['swe', 'chi', 'fre', 'eng']
+    }
+  ])
+  assert.equal(books[0].language, 'chi')
+  assert.equal(isRecommendable(books[0]), true, 'a work with a Chinese edition is recommendable even when chi is not the first code')
+})
+
 test('isRecommendable accepts a titled, authored, Chinese book and rejects the rest', () => {
   const good = { id: 'OL1', title: '机器学习', author: 'Tom Mitchell', language: 'chi' }
   const zhCode = { id: 'OL2', title: '机器学习', author: 'Tom Mitchell', language: 'zh' }
