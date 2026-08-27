@@ -88,6 +88,21 @@ test('parseRecommended reads only the 已推荐 section, not tag bullets', () =>
   ])
 })
 
+test('parseRecommended stops at the next heading after 已推荐', () => {
+  const text = [
+    '# 用户画像',
+    '',
+    '## 已推荐',
+    '- 甲书 — 甲作者 — 2026-01-01',
+    '',
+    '## 历史',
+    '- 乙书 — 乙作者 — 2026-01-02'
+  ].join('\n')
+  assert.deepEqual(parseRecommended(text), [
+    { title: '甲书', author: '甲作者', date: '2026-01-01' }
+  ])
+})
+
 test('normalizeBookKey is case and whitespace insensitive', () => {
   assert.equal(normalizeBookKey('  Machine  Learning ', 'Tom Mitchell'), normalizeBookKey('machine learning', 'TOM MITCHELL'))
   assert.notEqual(normalizeBookKey('Machine Learning', 'Tom Mitchell'), normalizeBookKey('Machine Learning', ' başka'))

@@ -38,9 +38,9 @@ export function parseRecommended(text) {
   const section = text.split(/^##\s*已推荐\s*$/m)[1] ?? ''
   const entries = []
   for (const line of section.split('\n')) {
+    if (/^##/.test(line)) break
     const m = line.match(/^\s*-\s*(.+?)\s*$/)
     if (!m) continue
-    if (/^##/.test(m[1])) break
     const [title, author, date] = m[1].split(/\s+—\s+/)
     if (!title || !author) continue
     entries.push(date ? { title, author, date } : { title, author })

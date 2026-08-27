@@ -7,9 +7,7 @@ export function normalizeOpenLibraryDocs(docs) {
     id: (doc.key ?? '').split('/').pop(),
     title: doc.title ?? '',
     author: doc.author_name?.[0] ?? '',
-    language: doc.language?.[0] ?? '',
-    tags: [],
-    blurb: ''
+    language: doc.language?.[0] ?? ''
   }))
 }
 

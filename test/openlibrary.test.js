@@ -26,17 +26,13 @@ test('normalizeOpenLibraryDocs turns raw search docs into candidate books', () =
       id: 'OL2711254W',
       title: '机器学习',
       author: 'Tom M. Mitchell',
-      language: 'chi',
-      tags: [],
-      blurb: ''
+      language: 'chi'
     },
     {
       id: 'OL999W',
       title: 'Untitled Notes',
       author: '',
-      language: 'eng',
-      tags: [],
-      blurb: ''
+      language: 'eng'
     }
   ])
 })
