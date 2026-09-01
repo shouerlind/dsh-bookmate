@@ -112,3 +112,20 @@ test('book_rank rejects candidate lists without a single valid book', async () =
   await assert.rejects(tool.execute({ books: [], topics: [] }, exec), /books/)
   await assert.rejects(tool.execute({ books: [{ title: '  ', author: '某作者' }], topics: [] }, exec), /books/)
 })
+
+test('book_rank carries each candidate url and cover through to the ranked output and render', async () => {
+  const tool = createBookRankTool({
+    loadProfileImpl: profileOf({ exists: true, tags: ['typescript'], recommended: [], text: '' })
+  })
+  const value = await tool.execute({
+    books: [
+      { title: '深入浅出TypeScript', author: '廿三', tags: ['typescript'], url: 'https://openlibrary.org/works/OL1W', cover: 'https://covers.openlibrary.org/b/id/9-M.jpg' }
+    ],
+    topics: ['typescript']
+  }, exec)
+  assert.equal(value.ranked[0].url, 'https://openlibrary.org/works/OL1W')
+  assert.equal(value.ranked[0].cover, 'https://covers.openlibrary.org/b/id/9-M.jpg')
+  const blocks = tool.output.render({}, value)
+  assert.match(blocks[0].text, /openlibrary\.org\/works\/OL1W/)
+  assert.match(blocks[0].text, /covers\.openlibrary\.org\/b\/id\/9-M\.jpg/)
+})

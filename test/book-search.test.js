@@ -25,8 +25,19 @@ test('searchOpenLibrary queries OpenLibrary and returns normalized recommendable
   assert.ok(calls[0].options.headers['user-agent'])
   assert.equal(calls[0].options.signal, controller.signal)
   assert.deepEqual(books, [
-    { id: 'OL1W', title: '深入浅出TypeScript', author: '廿三', language: 'chi' }
+    { id: 'OL1W', title: '深入浅出TypeScript', author: '廿三', language: 'chi', url: 'https://openlibrary.org/works/OL1W' }
   ])
+})
+
+test('searchOpenLibrary collapses duplicate editions and keeps the one with a cover', async () => {
+  const fetchImpl = async () => stubResponse([
+    { key: '/works/OL1W', title: '重构', author_name: ['马丁·福勒'], language: ['chi'] },
+    { key: '/works/OL2W', title: ' 重构 ', author_name: ['马丁·福勒'], language: ['chi'], cover_i: 777 }
+  ])
+  const books = await searchOpenLibrary({ query: '重构', fetchImpl })
+  assert.equal(books.length, 1, 'the same title+author collapses to one recommendable candidate')
+  assert.equal(books[0].id, 'OL1W', 'the first edition wins identity')
+  assert.equal(books[0].cover, 'https://covers.openlibrary.org/b/id/777-M.jpg', 'a duplicate with a cover upgrades the kept entry')
 })
 
 test('searchOpenLibrary turns HTTP errors into clear failures for the model fallback', async () => {
@@ -48,28 +59,36 @@ test('searchOpenLibrary returns an empty list when nothing matches', async () =>
 
 test('book_search tool executes through its output contract and renders candidate text', async () => {
   const fetchImpl = async () => stubResponse([
-    { key: '/works/OL9W', title: '重构', author_name: ['马库斯·福勒'], language: ['chi'] }
+    { key: '/works/OL9W', title: '重构', author_name: ['马库斯·福勒'], language: ['chi'], cover_i: 55 }
   ])
   const tool = createBookSearchTool({ fetchImpl })
   assert.equal(tool.name, 'book_search')
   const exec = { signal: new AbortController().signal }
-  const value = await tool.execute({ query: '重构' }, exec)
+  const value = await tool.execute({ query: '重构工程' }, exec)
   assert.deepEqual(value, {
     source: 'openlibrary',
-    books: [{ id: 'OL9W', title: '重构', author: '马库斯·福勒', language: 'chi' }]
+    books: [{
+      id: 'OL9W',
+      title: '重构',
+      author: '马库斯·福勒',
+      language: 'chi',
+      url: 'https://openlibrary.org/works/OL9W',
+      cover: 'https://covers.openlibrary.org/b/id/55-M.jpg'
+    }]
   })
   const blocks = tool.output.render({ query: '重构' }, value)
   assert.equal(blocks.length, 1)
   assert.match(blocks[0].text, /重构/)
   assert.match(blocks[0].text, /马库斯·福勒/)
   assert.match(blocks[0].text, /OL9W/)
+  assert.match(blocks[0].text, /https:\/\/openlibrary.org\/works\/OL9W/, 'render surfaces the work page link')
 })
 
 test('book_search reports an empty result as a fallback instruction, not an error', async () => {
   const fetchImpl = async () => stubResponse([])
   const tool = createBookSearchTool({ fetchImpl })
   const exec = { signal: new AbortController().signal }
-  const value = await tool.execute({ query: '冷门' }, exec)
+  const value = await tool.execute({ query: '冷门检索' }, exec)
   assert.deepEqual(value, { source: 'openlibrary', books: [] })
   const blocks = tool.output.render({ query: '冷门' }, value)
   assert.match(blocks[0].text, /未经线上核验/)
@@ -79,4 +98,11 @@ test('book_search rejects a blank query with a clear error', async () => {
   const tool = createBookSearchTool({ fetchImpl: async () => stubResponse([]) })
   const exec = { signal: new AbortController().signal }
   await assert.rejects(tool.execute({ query: '   ' }, exec), /query/)
+})
+
+test('book_search rejects a query shorter than OpenLibrary minimum with clear broadening guidance', async () => {
+  const tool = createBookSearchTool({ fetchImpl: async () => stubResponse([]) })
+  const exec = { signal: new AbortController().signal }
+  await assert.rejects(tool.execute({ query: '重构' }, exec), /至少 3 个字符/)
+  await assert.rejects(tool.execute({ query: '算法' }, exec), /refactoring/)
 })
