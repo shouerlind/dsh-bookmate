@@ -37,7 +37,7 @@ test('searchOpenLibrary collapses duplicate editions and keeps the one with a co
   const books = await searchOpenLibrary({ query: '重构', fetchImpl })
   assert.equal(books.length, 1, 'the same title+author collapses to one recommendable candidate')
   assert.equal(books[0].id, 'OL1W', 'the first edition wins identity')
-  assert.equal(books[0].cover, 'https://covers.openlibrary.org/b/id/777-M.jpg', 'a duplicate with a cover upgrades the kept entry')
+  assert.equal(books[0].cover, 'https://covers.openlibrary.org/b/id/777-S.jpg', 'a duplicate with a cover upgrades the kept entry')
 })
 
 test('searchOpenLibrary turns HTTP errors into clear failures for the model fallback', async () => {
@@ -73,7 +73,7 @@ test('book_search tool executes through its output contract and renders candidat
       author: '马库斯·福勒',
       language: 'chi',
       url: 'https://openlibrary.org/works/OL9W',
-      cover: 'https://covers.openlibrary.org/b/id/55-M.jpg'
+      cover: 'https://covers.openlibrary.org/b/id/55-S.jpg'
     }]
   })
   const blocks = tool.output.render({ query: '重构' }, value)

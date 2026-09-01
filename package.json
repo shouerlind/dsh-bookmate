@@ -1,6 +1,6 @@
 {
   "name": "dsh-bookmate",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Wrap-up book recommender for DeepSeek Harness: tiered trigger (explicit wrap-up recommends directly, uncertain result asks first, mid-work never fires) recommends a book matched to the conversation topic and the user's profile, carrying a clickable OpenLibrary page and cover.",
   "type": "module",
   "main": "lib/index.js",

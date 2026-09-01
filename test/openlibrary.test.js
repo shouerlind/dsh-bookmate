@@ -28,7 +28,7 @@ test('normalizeOpenLibraryDocs turns raw search docs into candidate books with a
       author: 'Tom M. Mitchell',
       language: 'chi',
       url: 'https://openlibrary.org/works/OL2711254W',
-      cover: 'https://covers.openlibrary.org/b/id/123456-M.jpg'
+      cover: 'https://covers.openlibrary.org/b/id/123456-S.jpg'
     },
     {
       id: 'OL999W',
@@ -76,12 +76,12 @@ test('isRecommendable accepts a titled, authored, Chinese book and rejects the r
 
 test('dedupeBooks collapses the same book across editions, keeping the first and upgrading its cover', () => {
   const first = { id: 'OL1W', title: '深入浅出 TypeScript', author: '廿三', language: 'chi', url: 'https://openlibrary.org/works/OL1W' }
-  const second = { id: 'OL2W', title: '深入浅出TypeScript', author: '廿三', language: 'chi', url: 'https://openlibrary.org/works/OL2W', cover: 'https://covers.openlibrary.org/b/id/9-M.jpg' }
+  const second = { id: 'OL2W', title: '深入浅出TypeScript', author: '廿三', language: 'chi', url: 'https://openlibrary.org/works/OL2W', cover: 'https://covers.openlibrary.org/b/id/9-S.jpg' }
   const other = { id: 'OL3W', title: '重构', author: '马丁·福勒', language: 'chi', url: 'https://openlibrary.org/works/OL3W' }
   const out = dedupeBooks([first, second, other])
   assert.equal(out.length, 2, 'the same title+author is one book, regardless of whitespace')
   assert.equal(out[0].id, 'OL1W', 'the first occurrence wins identity')
-  assert.equal(out[0].cover, 'https://covers.openlibrary.org/b/id/9-M.jpg', 'a duplicate with a cover upgrades the kept entry')
+  assert.equal(out[0].cover, 'https://covers.openlibrary.org/b/id/9-S.jpg', 'a duplicate with a cover upgrades the kept entry')
   assert.equal(out[1].id, 'OL3W')
 })
 

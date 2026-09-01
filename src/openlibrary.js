@@ -13,9 +13,12 @@ export function normalizeOpenLibraryDocs(docs) {
     // key is a work (or edition) path like /works/OL123W or /books/OL456M.
     const key = typeof doc.key === 'string' ? doc.key : ''
     const url = key ? `https://openlibrary.org${key}` : undefined
-    // OpenLibrary exposes a cover-image id (cover_i); build the medium-size URL.
+    // OpenLibrary exposes a cover-image id (cover_i); build the small-size URL.
+    // -S keeps the thumbnail compact so the server can embed it as a base64
+    // data URI for the browser (the browser can't reach covers.openlibrary.org
+    // without a proxy, but data: URIs render without an external fetch).
     const cover = Number.isFinite(doc.cover_i) && doc.cover_i > 0
-      ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`
+      ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-S.jpg`
       : undefined
     return {
       id: key.split('/').pop(),

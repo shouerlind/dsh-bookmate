@@ -113,19 +113,39 @@ test('book_rank rejects candidate lists without a single valid book', async () =
   await assert.rejects(tool.execute({ books: [{ title: '  ', author: '某作者' }], topics: [] }, exec), /books/)
 })
 
-test('book_rank carries each candidate url and cover through to the ranked output and render', async () => {
+test('book_rank embeds each candidate cover as a base64 data URI (browser-renderable)', async () => {
+  const fetchImpl = async () => ({
+    ok: true,
+    headers: { get: () => 'image/jpeg' },
+    arrayBuffer: async () => new Uint8Array([0xFF, 0xD8, 0xFF, 0xE0]).buffer
+  })
   const tool = createBookRankTool({
-    loadProfileImpl: profileOf({ exists: true, tags: ['typescript'], recommended: [], text: '' })
+    loadProfileImpl: profileOf({ exists: true, tags: ['typescript'], recommended: [], text: '' }),
+    fetchImpl
   })
   const value = await tool.execute({
     books: [
-      { title: '深入浅出TypeScript', author: '廿三', tags: ['typescript'], url: 'https://openlibrary.org/works/OL1W', cover: 'https://covers.openlibrary.org/b/id/9-M.jpg' }
+      { title: '深入浅出TypeScript', author: '廿三', tags: ['typescript'], url: 'https://openlibrary.org/works/OL1W', cover: 'https://covers.openlibrary.org/b/id/9-S.jpg' }
     ],
     topics: ['typescript']
   }, exec)
   assert.equal(value.ranked[0].url, 'https://openlibrary.org/works/OL1W')
-  assert.equal(value.ranked[0].cover, 'https://covers.openlibrary.org/b/id/9-M.jpg')
+  assert.ok(/^data:image\/jpeg;base64,/.test(value.ranked[0].cover), 'the cover should be embedded as a base64 data URI')
   const blocks = tool.output.render({}, value)
   assert.match(blocks[0].text, /openlibrary\.org\/works\/OL1W/)
-  assert.match(blocks[0].text, /covers\.openlibrary\.org\/b\/id\/9-M\.jpg/)
+})
+
+test('book_rank keeps the cover URL when the cover fetch fails (graceful fallback)', async () => {
+  const fetchImpl = async () => ({ ok: false, status: 404 })
+  const tool = createBookRankTool({
+    loadProfileImpl: profileOf({ exists: true, tags: ['typescript'], recommended: [], text: '' }),
+    fetchImpl
+  })
+  const value = await tool.execute({
+    books: [
+      { title: '别的新书', author: '某作者', tags: ['typescript'], cover: 'https://covers.openlibrary.org/b/id/404-S.jpg' }
+    ],
+    topics: ['typescript']
+  }, exec)
+  assert.equal(value.ranked[0].cover, 'https://covers.openlibrary.org/b/id/404-S.jpg')
 })

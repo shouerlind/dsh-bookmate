@@ -28,13 +28,35 @@ function normalizeCandidates(books) {
     .filter((book) => book.title.length > 0 && book.author.length > 0)
 }
 
-export function createBookRankTool({ loadProfileImpl = loadProfile } = {}) {
+// The browser can't reach covers.openlibrary.org without a proxy (the machine's
+// direct connection needs 127.0.0.1:7890, which the GUI's image renderer does
+// not use). So the DSH server fetches the cover here — it routes through the
+// proxy like book_search did — and embeds it as a base64 data URI, which the
+// browser renders without any external fetch. On any failure we keep the
+// original URL rather than dropping the cover.
+async function coverToDataUri(cover, fetchImpl) {
+  if (typeof cover !== 'string') return cover
+  if (cover.startsWith('data:')) return cover
+  if (!/^https?:\/\//.test(cover)) return cover
+  try {
+    const res = await fetchImpl(cover)
+    if (!res.ok) return cover
+    const mime = res.headers.get?.('content-type') || 'image/jpeg'
+    const bytes = Buffer.from(await res.arrayBuffer())
+    return `data:${mime};base64,${bytes.toString('base64')}`
+  } catch {
+    return cover
+  }
+}
+
+export function createBookRankTool({ loadProfileImpl = loadProfile, fetchImpl = fetch } = {}) {
   return {
     name: 'book_rank',
     description:
       'Rank tagged book candidates for this user. Pass the candidates with your own topic tags plus the current conversation topics; ' +
-      'the tool scores them against the user profile, drops books already recommended before, and returns the top-k with reasons. ' +
-      'Carry each candidate\'s optional url and cover through from book_search so the final recommendation can link to it.',
+      'the tool scores them against the user profile, drops books already recommended before, and returns the top-k with reasons, ' +
+      'embedding each cover as a base64 data URI so it renders in the browser. ' +
+      'Carry each candidate\'s optional url and cover through from book_search.',
     parameters: {
       type: 'object',
       properties: {
@@ -83,7 +105,7 @@ export function createBookRankTool({ loadProfileImpl = loadProfile } = {}) {
                 score: { type: 'number' },
                 reason: { type: 'string' },
                 url: { type: 'string', description: 'OpenLibrary work/edition page, when the candidate carried one.' },
-                cover: { type: 'string', description: 'Cover thumbnail URL, when the candidate carried one.' }
+                cover: { type: 'string', description: 'Cover as a base64 data URI (renders in the browser), when the candidate carried one.' }
               },
               required: ['title', 'author', 'tags', 'score', 'reason']
             }
@@ -114,6 +136,9 @@ export function createBookRankTool({ loadProfileImpl = loadProfile } = {}) {
           ...(book.url ? { url: book.url } : {}),
           ...(book.cover ? { cover: book.cover } : {})
         }))
+      for (const entry of ranked) {
+        if (entry.cover !== undefined) entry.cover = await coverToDataUri(entry.cover, fetchImpl)
+      }
       return { ranked }
     }
   }
@@ -126,7 +151,9 @@ function renderRanked(value) {
   const lines = value.ranked.map((book, index) => {
     const id = book.id !== undefined ? `（id: ${book.id}）` : ''
     const link = book.url !== undefined ? ` ${book.url}` : ''
-    const cover = book.cover !== undefined ? ` ![封面](${book.cover})` : ''
+    // cover is now a data URI (potentially large); keep the render compact so
+    // the model's context isn't bloated — the structured `cover` holds the value.
+    const cover = book.cover !== undefined ? ` [封面]` : ''
     return `${index + 1}. 《${book.title}》 ${book.author}${id}${link}${cover} — ${book.reason}`
   })
   return `按画像与本次主题排序（top ${value.ranked.length}）：\n${lines.join('\n')}`
