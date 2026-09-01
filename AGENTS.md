@@ -35,3 +35,17 @@
 - **线上书源依赖网络**：本机直连 OpenLibrary 需代理（127.0.0.1:7890，常不开），代理没开时 `book_search` 必然失败——失败后模型知识兜底是设计内行为（ADR-0003），别当 bug 修。
 - **中文把守在工具层**：`isRecommendable`（zh/chi）+ 结构化校验只锁在 `book_search` 工具内，引擎不做语言或质量过滤；模型知识兜底的候选没有 language 字段，中文性由模型自守。
 - **画像三段结构有约定**：`## 兴趣标签` / `## 已推荐` 是解析锚点（`src/profile.js`），`## 已推荐` 行格式为 `- 书名 — 作者 — 日期`（长破折号），改格式需同步解析器与测试。
+
+## Agent skills
+
+### Issue tracker
+
+问题与规格存放在 GitHub Issues，统一用 `gh` CLI 操作。See `docs/agents/issue-tracker.md`。
+
+### Triage labels
+
+triage 五角色标签保留默认词汇：`needs-triage` / `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`。See `docs/agents/triage-labels.md`。
+
+### Domain docs
+
+单上下文：仓库根 `CONTEXT.md` + `docs/adr/`。See `docs/agents/domain.md`。
