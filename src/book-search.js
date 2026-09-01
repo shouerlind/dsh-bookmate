@@ -108,7 +108,10 @@ function renderBooks(value) {
   const lines = value.books.map((book) => {
     const id = book.id ? `（id: ${book.id}）` : ''
     const link = book.url ? ` ${book.url}` : ''
-    return `- 《${book.title}》 ${book.author}${id}${link}`
+    // show the cover URL so the model can carry it into book_rank (which embeds
+    // it as a data URI) — otherwise the model never sees the cover to pass on.
+    const cover = book.cover ? ` 封面: ${book.cover}` : ''
+    return `- 《${book.title}》 ${book.author}${id}${link}${cover}`
   })
   return `OpenLibrary 候选（${value.books.length} 本）：\n${lines.join('\n')}`
 }

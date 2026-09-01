@@ -82,6 +82,7 @@ test('book_search tool executes through its output contract and renders candidat
   assert.match(blocks[0].text, /马库斯·福勒/)
   assert.match(blocks[0].text, /OL9W/)
   assert.match(blocks[0].text, /https:\/\/openlibrary.org\/works\/OL9W/, 'render surfaces the work page link')
+  assert.match(blocks[0].text, /covers\.openlibrary\.org\/b\/id\/55-S\.jpg/, 'render surfaces the cover URL so the model can pass it on')
 })
 
 test('book_search reports an empty result as a fallback instruction, not an error', async () => {
