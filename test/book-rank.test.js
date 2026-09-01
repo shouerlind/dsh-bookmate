@@ -133,6 +133,7 @@ test('book_rank embeds each candidate cover as a base64 data URI (browser-render
   assert.ok(/^data:image\/jpeg;base64,/.test(value.ranked[0].cover), 'the cover should be embedded as a base64 data URI')
   const blocks = tool.output.render({}, value)
   assert.match(blocks[0].text, /openlibrary\.org\/works\/OL1W/)
+  assert.match(blocks[0].text, /data:image\/jpeg;base64,/, 'the render carries the data URI so the model can reproduce it')
 })
 
 test('book_rank keeps the cover URL when the cover fetch fails (graceful fallback)', async () => {

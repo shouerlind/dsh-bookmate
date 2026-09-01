@@ -151,9 +151,11 @@ function renderRanked(value) {
   const lines = value.ranked.map((book, index) => {
     const id = book.id !== undefined ? `（id: ${book.id}）` : ''
     const link = book.url !== undefined ? ` ${book.url}` : ''
-    // cover is now a data URI (potentially large); keep the render compact so
-    // the model's context isn't bloated — the structured `cover` holds the value.
-    const cover = book.cover !== undefined ? ` [封面]` : ''
+    // The model only sees the tool's rendered text (not the structured cover),
+    // so the render must carry the data URI for the model to put into the final
+    // ![封面](data:) markdown. It's a small `-S` thumbnail (~2.7KB), so this is
+    // manageable.
+    const cover = book.cover !== undefined ? ` ![封面](${book.cover})` : ''
     return `${index + 1}. 《${book.title}》 ${book.author}${id}${link}${cover} — ${book.reason}`
   })
   return `按画像与本次主题排序（top ${value.ranked.length}）：\n${lines.join('\n')}`
